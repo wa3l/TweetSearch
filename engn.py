@@ -10,23 +10,26 @@ Date: 2/10/2013
 class Engine:
   """The search engine"""
 
-  store = None
+  index = None
   query = {}
 
-  def __init__(self, store):
+  def __init__(self, index):
     """Save a pointer to our indices"""
-    self.store = store
+    self.index = index
 
 
   def search(self, query):
     """Perform any search and return results"""
     self.query = query
-    answers = wanswers = []
-    answers    = self.get_boolean_answers(answers)
-    answers    = self.get_phrase_answers(answers)
-    wanswers   = self.get_wildcard_answers(wanswers)
-    if wanswers: answers.append(set.intersection(*wanswers))
-    if answers: return set.intersection(*answers)
+    for t in self.query:
+      if t not in self.index.terms:
+        return
+    # answers = wanswers = []
+    # answers    = self.get_boolean_answers(answers)
+    # answers    = self.get_phrase_answers(answers)
+    # wanswers   = self.get_wildcard_answers(wanswers)
+    # if wanswers: answers.append(set.intersection(*wanswers))
+    # if answers: return set.intersection(*answers)
 
 
   def get_boolean_answers(self, answers):
@@ -56,7 +59,7 @@ class Engine:
     for card in terms:
       subset = set()
       for t in card:
-        results = set(self.store.index[t].keys())
+        results = set(self.index.index[t].keys())
         if not subset: subset = results.copy()
         subset |= results
       answers.append(subset)
@@ -67,9 +70,9 @@ class Engine:
     """Perform a boolean search given a list of terms"""
     terms_docs = []
     for term in query:
-      if term not in self.store.index: return None
+      if term not in self.index.index: return None
       docs = set()
-      for doc in self.store.index[term].keys():
+      for doc in self.index.index[term].keys():
         docs.add(doc)
       terms_docs.append(docs)
     return set.intersection(*terms_docs)
@@ -79,12 +82,12 @@ class Engine:
     """Perform a positional search given a list of docs and terms"""
     answers = set()
     for doc in docs:
-      base_pos = self.store.index[terms[0]][doc]
+      base_pos = self.index.index[terms[0]][doc]
       for pos in base_pos:
         i = 1
         found = True
         while i < len(terms):
-          if pos + i not in self.store.index[terms[i]][doc]:
+          if pos + i not in self.index.index[terms[i]][doc]:
             found = False
             break
           i += 1
@@ -106,8 +109,8 @@ class Engine:
     terms = set()
     for tri in bigrams:
       inter = set()
-      if tri in self.store.kindex:
-        inter = self.store.kindex[tri]
+      if tri in self.index.kindex:
+        inter = self.index.kindex[tri]
       if not terms: terms = inter.copy()
       terms = terms & inter
     if terms: return terms
