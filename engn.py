@@ -7,138 +7,87 @@ Author: Wael Al-Sallami
 Date: 2/10/2013
 """
 
+import math
+
 class Engine:
   """The search engine"""
 
   index = None
-  query = {}
+  query = []
 
   def __init__(self, index):
-    """Save a pointer to our indices"""
+    """Save a pointer to our index"""
     self.index = index
 
 
   def search(self, query):
-    """Perform any search and return results"""
+    """Perform any search and return answers"""
     self.query = query
     for t in self.query:
-      if t not in self.index.terms:
-        return
-    # answers = wanswers = []
-    # answers    = self.get_boolean_answers(answers)
-    # answers    = self.get_phrase_answers(answers)
-    # wanswers   = self.get_wildcard_answers(wanswers)
-    # if wanswers: answers.append(set.intersection(*wanswers))
-    # if answers: return set.intersection(*answers)
+      if t not in self.index.terms: return
+
+    terms_tf_idf = self.query_terms_tf_idf()
+    scores = self.calculate_scores(terms_tf_idf)
+    return self.top_50_answers(scores)
 
 
-  def get_boolean_answers(self, answers):
-    """Get boolean answers and append them to the overall list of answers"""
-    if self.query["bool"]:
-      boolean = self.boolean_search(self.query["bool"])
-      if boolean: answers.append(boolean)
-    return answers
+  def calculate_scores(self, terms_tf_idf):
+    """Calculate the document scores for the given query terms"""
+    scores = qlength = dlength = {}
+    for t in terms_tf_idf:
+      q_tf_idf = terms_tf_idf[t]
+      for d in self.index.terms[t]:
+        d_tf_idf = self.tf_idf(t, d)
+        if d not in scores:
+          scores[d] = qlength[d] = dlength[d] = 0
+        scores[d]  += q_tf_idf * d_tf_idf
+        qlength[d] += math.pow(q_tf_idf, 2)
+        dlength[d] += math.pow(d_tf_idf, 2)
+        # length[d] += math.pow(d_tf_idf, 2)
+
+    for d in scores:
+      scores[d] /= math.sqrt(qlength[d]) * math.sqrt(dlength[d])
+
+    return scores
 
 
-  def get_phrase_answers(self, answers):
-    """Get phrase answers and append them to the overall list of answers"""
-    for phrase in self.query["phrase"]:
-      phrase = self.phrase_search(phrase)
-      if phrase: answers.append(phrase)
-    return answers
+  def top_50_answers(self, scores):
+    """Sorts answer docs by their scores and returns the top 50"""
+    answers = sorted(scores, key=lambda d: scores[d], reverse=True)
+    return answers[0:50]
 
 
-  def get_wildcard_answers(self, answers):
-    """perform wildcard search given a list of wildcards"""
-    terms = []
-    for q in self.query['wild']:
-      bigrams = self.process_wildcard(q)
-      subset  = self.wildcard_terms(bigrams)
-      if subset: terms.append(subset)
-
-    for card in terms:
-      subset = set()
-      for t in card:
-        results = set(self.index.index[t].keys())
-        if not subset: subset = results.copy()
-        subset |= results
-      answers.append(subset)
-    return answers
+  def query_terms_tf(self):
+    """Return a {'term': tf} dict for our query terms"""
+    terms_tf = {}
+    for t in self.query:
+      if t not in terms_tf: terms_tf[t] = 0
+      terms_tf[t] += 1
+    return terms_tf
 
 
-  def boolean_search(self, query):
-    """Perform a boolean search given a list of terms"""
-    terms_docs = []
-    for term in query:
-      if term not in self.index.index: return None
-      docs = set()
-      for doc in self.index.index[term].keys():
-        docs.add(doc)
-      terms_docs.append(docs)
-    return set.intersection(*terms_docs)
+  def query_terms_tf_idf(self):
+    """return a {'term': tf_idf} dict for our query terms """
+    tfs = self.query_terms_tf()
+    terms_tf_idf = {}
+    for t in tfs:
+      tf = math.log(tfs[t], 2) + 1
+      terms_tf_idf[t] = tf * self.idf(t)
+    return terms_tf_idf
 
 
-  def positional_search(self, docs, terms):
-    """Perform a positional search given a list of docs and terms"""
-    answers = set()
-    for doc in docs:
-      base_pos = self.index.index[terms[0]][doc]
-      for pos in base_pos:
-        i = 1
-        found = True
-        while i < len(terms):
-          if pos + i not in self.index.index[terms[i]][doc]:
-            found = False
-            break
-          i += 1
-        if found:
-          answers.add(doc)
-    return answers
+  def tf_idf(self, t, d):
+    """return tf_idf for a document pair on term t"""
+    return self.tf(t, d) * self.idf(t)
 
 
-  def phrase_search(self, query):
-    """Perform a phrase search"""
-    terms = query.split()
-    docs = self.boolean_search(terms)
-    if docs is None: return
-    return self.positional_search(docs, terms)
+  def idf(self, t):
+    """retrun idf of term t in the index"""
+    df = float(self.index.size)/len(self.index.terms[t])
+    return math.log(df, 2)
 
 
-  def wildcard_terms(self, bigrams):
-    """Given a list of bigrams, return union of their terms"""
-    terms = set()
-    for tri in bigrams:
-      inter = set()
-      if tri in self.index.kindex:
-        inter = self.index.kindex[tri]
-      if not terms: terms = inter.copy()
-      terms = terms & inter
-    if terms: return terms
-
-
-  def process_wildcard(self, cards):
-    """Generate a wildcard's bigrams"""
-    middle = len(cards) == 3
-    bigrams = []
-    if cards[0] == '*':
-      bigrams.extend(self.bigrams(cards[1], 'end'))
-    elif cards[1] == '*' and middle:
-      bigrams.extend(self.bigrams(cards[0], 'start'))
-      bigrams.extend(self.bigrams(cards[2], 'end'))
-    else:
-      bigrams.extend(self.bigrams(cards[0], 'start'))
-    return bigrams
-
-
-  def bigrams(self, term, pos):
-    """Generate bigrams for wildcard subset"""
-    k = 2
-    bigrams = []
-    if pos == 'start': bigrams.append("$" + term[0:k-1])
-    i = 0
-    while i < len(term) - (k - 1):
-      bigrams.append(term[i:i+k])
-      i += 1
-    if pos == 'end': bigrams.append(term[-(k-1):] + "$")
-    return [t for t in bigrams if len(t) == k]
+  def tf(self, t, d):
+    """return tf for term t in document d"""
+    return 1 + math.log(self.index.terms[t][d], 2)
 

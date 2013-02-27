@@ -7,7 +7,7 @@ Author: Wael Al-Sallami
 Date: 2/10/2013
 """
 
-import os, re, gzip, timer, marshal, json, math
+import os, re, gzip, timer, marshal, json
 
 class Index:
   """The data store"""
@@ -17,8 +17,7 @@ class Index:
     'size' : number of tweets,
     'terms': {
       'term' : {
-        'df': ducomuent frequency of t,
-        'docs': {'docsID': tf, ...}
+        'docsID': tf, ...
       },
       ...
     }
@@ -53,12 +52,11 @@ class Index:
   def add_term(self, t, d):
     """Add term t to terms collection and handle its data"""
     if t in self.terms:
-      if d not in self.terms[t]['docs']:
-        self.terms[t]['docs'][d] = 0
-      self.terms[t]['docs'][d] += 1
-      self.terms[t]['df'] += 1
+      if d not in self.terms[t]:
+        self.terms[t][d] = 0
+      self.terms[t][d] += 1
     else:
-      self.terms[t] = {'df': 1, 'docs': {d: 1}}
+      self.terms[t] = {d: 1}
 
 
   def tokenize(self, text):
@@ -96,31 +94,4 @@ class Index:
   def on_disk(self):
     """Return True if index is present on disk"""
     if os.path.exists(self.index_name): return True
-
-
-  # def calculate_tfs(self):
-  #   """calculate tf for each document"""
-  #   for t in self.terms:
-  #     for d in self.terms[t]['docs']:
-  #       self.terms[t]['docs'][d] = math.log(self.terms[t]['docs'][d], 2) + 1
-
-
-  # def get_idf(self, t):
-  #   """Return inverse document frequency of a term t"""
-  #   N  = self.size
-  #   df = len(self.terms[t]['docs'])
-  #   return math.log(N/df, 2)
-
-
-  # def get_tf(self, t, d):
-  #   """Return frequency integer value of term t in a document d"""
-  #   tf = 0
-  #   if d in self.terms[t]['docs']:
-  #     tf = self.terms[t]['docs'][d]
-  #   return tf
-
-
-
-
-
 
