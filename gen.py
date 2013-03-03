@@ -20,6 +20,7 @@ Date: 2/10/2013
 }
 """
 import os, re, gzip, timer, marshal, json, copy
+from collections import Counter
 
 class Index:
   """The data store"""
@@ -51,35 +52,35 @@ class Index:
     self.size = len(self.docs)
     for d in self.docs:
       self.add_terms(d)
-      self.add_user(d)
-      self.add_mentions(d)
-    self.pagerank()
+      # self.add_user(d)
+      # self.add_mentions(d)
+    # self.pagerank()
 
 
-  def pagerank(self):
-    alpha = 0.85
-    tele = (1.0 - alpha) / len(self.users)
-    # initialize pageranks
-    prev_pr = dict.fromkeys(self.users, 1.0/len(self.users))
-    next_pr = dict.fromkeys(self.users, 0)
-    for i in range(100):
-      conv = 0
-      for u in self.mentions:
-        for m in self.mentions[u]:
-          next_pr[m] += prev_pr[u]/len(self.mentions[u])
+  # def pagerank(self):
+  #   alpha = 0.85
+  #   tele = (1.0 - alpha) / len(self.users)
+  #   # initialize pageranks
+  #   prev_pr = dict.fromkeys(self.users, 1.0/len(self.users))
+  #   next_pr = dict.fromkeys(self.users, 0)
+  #   for i in range(100):
+  #     conv = 0
+  #     for u in self.mentions:
+  #       for m in self.mentions[u]:
+  #         next_pr[m] += prev_pr[u]/len(self.mentions[u])
 
-      # add teleportation:
-      if i == 0:
-        next_pr.update((k,v) for (k,v) in next_pr.iteritems() if v > 0)
+  #     # add teleportation:
+  #     if i == 0:
+  #       next_pr.update((k,v) for (k,v) in next_pr.iteritems() if v > 0)
 
-      for u in next_pr:
-        next_pr[u] = alpha * next_pr[u] + tele
-        conv += abs(prev_pr[u] - next_pr[u])
+  #     for u in next_pr:
+  #       next_pr[u] = alpha * next_pr[u] + tele
+  #       conv += abs(prev_pr[u] - next_pr[u])
 
-      if conv < 0.00001: break
-      prev_pr = copy.deepcopy(next_pr)
+  #     if conv < 0.00001: break
+  #     prev_pr = copy.deepcopy(next_pr)
 
-    self.pagerank = next_pr
+  #   self.pagerank = next_pr
 
 
   def add_mentions(self, doc):
@@ -104,20 +105,25 @@ class Index:
   def add_terms(self, d):
     """Add all tweet tokens to our terms index"""
     tokens = self.tokenize(d['text'])
-    for t in tokens: self.add_term(t, d)
+    # for t in tokens: self.add_term(t, d)
+    counts = Counter(tokens)
+    for t in counts:
+      if t not in self.terms: self.terms[t] = {}
+      self.terms[t][d['id']] = counts[t]
 
 
-  def add_term(self, t, doc):
-    """Add term t to terms collection and handle its data"""
-    did = doc['id']
-    uid = doc['user']['id']
 
-    if t in self.terms:
-      if did not in self.terms[t]:
-        self.terms[t][did] = {'tf': 0, 'user': uid}
-      self.terms[t][did]['tf'] += 1
-    else:
-      self.terms[t] = {did: {'tf': 1, 'user': uid}}
+  # def add_term(self, t, doc):
+  #   """Add term t to terms collection and handle its data"""
+  #   did = doc['id']
+  #   uid = doc['user']['id']
+
+  #   if t in self.terms:
+  #     if did not in self.terms[t]:
+  #       self.terms[t][did] = {'tf': 0, 'user': uid}
+  #     self.terms[t][did]['tf'] += 1
+  #   else:
+  #     self.terms[t] = {did: {'tf': 1, 'user': uid}}
 
 
   def tokenize(self, text):
@@ -132,10 +138,10 @@ class Index:
     for line in f:
       doc = json.loads(line)
       self.docs.append({
-        'id': doc['id'],
+        'id':   doc['id'],
         'text': doc['text'],
         'user': {'id': doc['user']['id'], 'name': doc['user']['screen_name']},
-        'mentions': doc['entities']['user_mentions']
+        '@':    doc['entities']['user_mentions']
       })
     f.close()
 
