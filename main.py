@@ -24,7 +24,7 @@ class Prompt(cmd.Cmd):
     print self.welcome
     with timer.Timer() as t:
       # self.Index = gen.Index("mars_tweets_medium.json")
-      self.Index = gen.Index("sample2.json")
+      self.Index = gen.Index("sample.json")
     print '> Request took %.03f sec.' % t.interval
 
 
