@@ -7,7 +7,7 @@ Author: Wael Al-Sallami
 Date: 2/10/2013
 """
 
-import math
+import math, timer
 from collections import Counter
 
 class Engine:
@@ -33,17 +33,25 @@ class Engine:
 
   def calculate_scores(self):
     """Calculate the document scores for the given query terms"""
-    self.calculate_idfs()
-    query_tf  = Counter(self.query)
-    query_vec = self.query_vector(query_tf)
+    with timer.Timer() as t:
+      self.calculate_idfs()
+    print '> Request took %.03f sec.' % t.interval
+
 
     docs = set()
     for t in self.query:
       docs = docs.union(set(self.index.terms[t].keys()))
 
+    terms = set()
+    for d in docs:
+      terms = terms.union(self.index.docs[d].terms)
+
+    query_tf = Counter(self.query)
+    qvector  = self.query_vector(query_tf, terms)
+
     self.scores = {}
     for d in docs:
-      self.scores[d] = self.cosim(query_vec, self.doc_vector(d))
+      self.scores[d] = self.cosim(qvector, self.doc_vector(d, terms))
     return self.scores
 
 
@@ -55,17 +63,17 @@ class Engine:
     return dot_product / (magnitude1 * magnitude2)
 
 
-  def doc_vector(self, doc):
+  def doc_vector(self, doc, terms):
     vector = []
-    for t in self.index.terms:
+    for t in terms:
       vector.append(self.weight(t, doc))
     return vector
 
 
   """optimize idfs"""
-  def query_vector(self, counter):
+  def query_vector(self, counter, terms):
     vector = []
-    for t in self.index.terms:
+    for t in terms:
       w = 0
       if counter[t] != 0:
         w = (1 + math.log(counter[t], 2)) * self.idf_weights[t]

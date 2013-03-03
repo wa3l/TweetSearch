@@ -38,10 +38,12 @@ class Index:
     if self.on_disk():
       print "\n> Reading index! This happens once per session, please wait ..."
       self.load()
+      print '\a\a'
     else:
       print "\n> Writing index! This only happens once, please wait ..."
       self.build(json_file)
       self.save()
+      print '\a\a'
 
     # for p in self.pageranks:
       # print str(self.users[p].name) + ": " + str(self.pageranks[p])
@@ -120,7 +122,8 @@ class Index:
 
   def add_doc(self, d):
     """Cache document to user relationships"""
-    self.docs[d.id] = d.user.id
+    Document = namedtuple('Document', ['user', 'terms'])
+    self.docs[d.id] = Document(d.user.id, set(d.text))
 
 
   def tokenize(self, text):
@@ -131,17 +134,22 @@ class Index:
   def read_docs(self, filename):
     """Read tweets into {'docID': text} dictionary"""
     f = open(filename, 'rU')
-    Document = namedtuple('Document', ['id', 'text', 'user', 'mentions'])
-    User     = namedtuple('User', ['id', 'name'])
+    # Document = namedtuple('Document', ['id', 'text', 'user', 'mentions'])
+    # User     = namedtuple('User', ['id', 'name'])
     tweets = []
     for line in f:
       d = json.loads(line)
-      tweet = Document(
-        d['id'],
-        self.tokenize(d['text']),
-        User(d['user']['id'], d['user']['screen_name']),
-        d['entities']['user_mentions']
-      )
+      tweet = {
+        'id': d['id'],
+        'terms': self.tokenize(d['text']),
+        'user': {'id': d['user']['id'], 'name': d['user']['screen_name']},
+        'mentions': d['entities']['user_mentions']
+      }
+      #   d['id'],
+      #   self.tokenize(d['text']),
+      #   User(d['user']['id'], d['user']['screen_name']),
+      #   d['entities']['user_mentions']
+      # )
       tweets.append(tweet)
     f.close()
     return tweets
@@ -149,7 +157,7 @@ class Index:
 
   def save(self):
     """Save index to disk"""
-    return
+    # return
     index_file = open(self.index_name, "w")
     index = {
       'terms':      self.terms,
