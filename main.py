@@ -23,8 +23,8 @@ class Prompt(cmd.Cmd):
     """Print intro message and write or load indices"""
     print self.welcome
     with timer.Timer() as t:
-      # self.Index = gen.Index("mars_tweets_medium.json")
-      self.Index = gen.Index("sample.json")
+      self.Index = gen.Index("mars_tweets_medium.json")
+      # self.Index = gen.Index("sample2.json")
     print '> Request took %.03f sec.' % t.interval
 
 

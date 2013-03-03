@@ -20,17 +20,16 @@ Date: 2/10/2013
 }
 """
 import os, re, gzip, timer, marshal, json, copy
-from collections import Counter
-from collections import namedtuple
+from collections import Counter, namedtuple
 
 class Index:
   """The data store"""
   size  = 0
   terms = {}
-  docs  = []
+  docs  = {}
   users = {}
-  mentions = {}
   pageranks = {}
+  tweets = []
   index_name = "index.dat"
 
 
@@ -41,21 +40,23 @@ class Index:
       self.load()
     else:
       print "\n> Writing index! This only happens once, please wait ..."
-      self.read_docs(json_file)
-      self.build()
+      self.build(json_file)
       self.save()
-    for p in self.pageranks:
-      print str(self.users[p]) + ": " + str(self.pageranks[p])
+
+    # for p in self.pageranks:
+      # print str(self.users[p].name) + ": " + str(self.pageranks[p])
 
 
-  def build(self):
+  def build(self, json_file):
     """Build index from tweets"""
-    self.size = len(self.docs)
-    for d in self.docs:
+    tweets = self.read_docs(json_file)
+    self.size = len(tweets)
+    for d in tweets:
       self.add_terms(d)
-      self.add_user(d)
+      self.add_doc(d)
+      self.add_user(d.user)
       self.add_mentions(d)
-    self.pagerank()
+    # self.pagerank()
 
 
   def pagerank(self, alpha=.85):
@@ -63,11 +64,14 @@ class Index:
     # initialize pageranks
     prev_pr = dict.fromkeys(self.users, 1.0/len(self.users))
     next_pr = dict.fromkeys(self.users, 0)
+    old = 0
+    new = 0
+    for u in prev_pr: old += prev_pr[u]
     for i in range(100):
-      conv = 0
-      for u in self.mentions:
-        for m in self.mentions[u]:
-          next_pr[m] += prev_pr[u]/len(self.mentions[u])
+      # conv = 0
+      for u in self.users:
+        for m in self.users[u].mentions:
+          next_pr[m] += prev_pr[u]/len(self.users[u].mentions)
 
       # add teleportation:
       if i == 0:
@@ -75,8 +79,13 @@ class Index:
 
       for u in next_pr:
         next_pr[u] = alpha * next_pr[u] + tele
-        conv += abs(prev_pr[u] - next_pr[u])
+        new += next_pr[u]
+        # conv += abs(prev_pr[u] - next_pr[u])
 
+      conv = abs(new - old)/len(next_pr)
+      old = new
+      new = 0
+      print "i is %s and conv is %s" %(i, conv)
       if conv < 0.00001: break
       prev_pr = copy.deepcopy(next_pr)
 
@@ -85,42 +94,33 @@ class Index:
 
   def add_mentions(self, d):
     """Add all mentions to a user's adjacency list"""
-    # if not d['mentions']: return
-    # uid = d['user']['id']
-    # if uid not in self.mentions:
-    #   self.mentions[uid] = set()
-    # for m in d['mentions']:
-    #   if m['id'] == uid: continue
-    #   self.users[m['id']] = m['screen_name']
-    #   self.mentions[uid].add(m['id'])
-    user = d.user
     if not d.mentions: return
-    if user.id not in self.mentions:
-      self.mentions[user.id] = set()
+    User = namedtuple('User', ['id', 'name'])
     for m in d.mentions:
-      if m['id'] == user.id: continue
-      self.users[m['id']] = m['screen_name']
-      self.mentions[user.id].add(m['id'])
+      if m['id'] == d.user.id: continue
+      mentioned = User(m['id'], m['screen_name'])
+      self.add_user(mentioned)
+      self.users[d.user.id].mentions.add(mentioned.id)
 
 
-  def add_user(self, d):
+  def add_user(self, user):
     """Add username to self.users[user-id]"""
-    # uid = d['user']['id']
-    # if uid not in self.users:
-    #   self.users[uid] = d['user']['name']
-    if d.user.id not in self.users:
-      self.users[d.user.id] = d.user.name
+    if user.id not in self.users:
+      User = namedtuple('User', ['name', 'mentions'])
+      self.users[user.id] = User(user.name, set())
 
 
   def add_terms(self, d):
     """Add all tweet tokens to our terms index"""
-    # counts = Counter(self.tokenize(d['text']))
-    counts = Counter(self.tokenize(d.text))
+    counts = Counter(d.text)
     for t in counts:
       if t not in self.terms: self.terms[t] = {}
-      # self.terms[t][d['id']] = counts[t]
       self.terms[t][d.id] = counts[t]
 
+
+  def add_doc(self, d):
+    """Cache document to user relationships"""
+    self.docs[d.id] = d.user.id
 
 
   def tokenize(self, text):
@@ -130,33 +130,35 @@ class Index:
 
   def read_docs(self, filename):
     """Read tweets into {'docID': text} dictionary"""
-    Document = namedtuple('Document', ['id', 'text', 'user', 'mentions'])
-    User = namedtuple('User', ['id', 'name'])
     f = open(filename, 'rU')
-    tweets = {}
+    Document = namedtuple('Document', ['id', 'text', 'user', 'mentions'])
+    User     = namedtuple('User', ['id', 'name'])
+    tweets = []
     for line in f:
-      doc = json.loads(line)
-      self.docs.append(
-        Document(doc['id'],
-                 doc['text'],
-                 User(doc['user']['id'], doc['user']['screen_name']),
-                 doc['entities']['user_mentions'])
+      d = json.loads(line)
+      tweet = Document(
+        d['id'],
+        self.tokenize(d['text']),
+        User(d['user']['id'], d['user']['screen_name']),
+        d['entities']['user_mentions']
       )
-      # self.docs.append({
-      #   'id':   doc['id'],
-      #   'text': doc['text'],
-      #   'user': {'id': doc['user']['id'], 'name': doc['user']['screen_name']},
-      #   'mentions':    doc['entities']['user_mentions']
-      # })
+      tweets.append(tweet)
     f.close()
+    return tweets
 
 
   def save(self):
     """Save index to disk"""
     return
     index_file = open(self.index_name, "w")
-    index = {'size': self.size, 'terms': self.terms}
+    index = {
+      'terms':      self.terms,
+      'pageranks':  self.pageranks,
+      'users':      self.users,
+      'docs':       self.docs
+    }
     marshal.dump(index, index_file)
+    del index
     index_file.close()
 
 
@@ -164,8 +166,12 @@ class Index:
     """Loads index into memory"""
     index_file = open(self.index_name)
     index = marshal.load(index_file)
-    self.terms = index['terms']
-    self.size  = index['size']
+    self.terms      = index['terms']
+    self.pageranks  = index['pageranks']
+    self.docs       = index['docs']
+    self.users      = index['users']
+    self.size       = len(index['docs'])
+    del index
     index_file.close()
 
 

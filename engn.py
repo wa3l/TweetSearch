@@ -55,7 +55,6 @@ class Engine:
     return dot_product / (magnitude1 * magnitude2)
 
 
-  """optimize idfs"""
   def doc_vector(self, doc):
     vector = []
     for t in self.index.terms:
