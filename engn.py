@@ -8,6 +8,7 @@ Date: 2/10/2013
 """
 
 import math
+from collections import Counter
 
 class Engine:
   """The search engine"""
@@ -23,32 +24,55 @@ class Engine:
   def search(self, query):
     """Perform any search and return answers"""
     self.query = query
-    for t in self.query:
-      if t not in self.index.terms: return
+    if not self.all_terms_present(): return
 
-    terms_tf_idf = self.query_terms_tf_idf()
-    scores = self.calculate_scores(terms_tf_idf)
-    return self.top_50_answers(scores)
+    scores = self.calculate_scores()
+    # print scores
+    # return self.top_50_answers(scores)
 
 
-  def calculate_scores(self, terms_tf_idf):
+  def calculate_scores(self):
     """Calculate the document scores for the given query terms"""
-    scores = qlength = dlength = {}
-    for t in terms_tf_idf:
-      q_tf_idf = terms_tf_idf[t]
-      for d in self.index.terms[t]:
-        d_tf_idf = self.tf_idf(t, d)
-        if d not in scores:
-          scores[d] = qlength[d] = dlength[d] = 0
-        scores[d]  += q_tf_idf * d_tf_idf
-        qlength[d] += math.pow(q_tf_idf, 2)
-        dlength[d] += math.pow(d_tf_idf, 2)
-        # length[d] += math.pow(d_tf_idf, 2)
+    # qterms_weight = self.qterms_weight()
+    qtf = self.query_terms_tf()
+    qvector = self.get_vector(qtf)
 
-    for d in scores:
-      scores[d] /= math.sqrt(qlength[d]) * math.sqrt(dlength[d])
+    # scores = qlength = dlength = {}
 
-    return scores
+    doc_vectors = []
+    for t in self.query:
+      # q_tf_idf = qterms_weight[t]
+    #   for d in self.index.terms[t]:
+    #     d_tf_idf = self.tf_idf(t, d)
+    #     if d not in scores:
+    #       scores[d] = qlength[d] = dlength[d] = 0.0
+    #     scores[d]  += q_tf_idf * d_tf_idf
+    #     qlength[d] += math.pow(q_tf_idf, 2)
+    #     dlength[d] += math.pow(d_tf_idf, 2)
+
+    # for d in scores:
+    #   length = math.sqrt(qlength[d]) * math.sqrt(dlength[d])
+    #   scores[d] /= length
+
+    # return scores
+
+
+  """optimize idfs"""
+  def get_vector(self, counter):
+    vector = []
+    for k in self.index.terms:
+      if counter[k] == 0: vector.append(0)
+      else:
+        tf  = 1 + math.log(counter[k], 2)
+        idf = math.log(float(self.index.size)/len(self.index.terms[k]), 2)
+        vector.append(tf * idf)
+    return vector
+
+
+  def all_terms_present(self):
+    for t in self.query:
+      if t not in self.index.terms: return False
+    return True
 
 
   def top_50_answers(self, scores):
@@ -59,35 +83,32 @@ class Engine:
 
   def query_terms_tf(self):
     """Return a {'term': tf} dict for our query terms"""
-    terms_tf = {}
-    for t in self.query:
-      if t not in terms_tf: terms_tf[t] = 0
-      terms_tf[t] += 1
-    return terms_tf
+    return Counter(self.query)
 
 
-  def query_terms_tf_idf(self):
+  def qterms_weight(self):
     """return a {'term': tf_idf} dict for our query terms """
     tfs = self.query_terms_tf()
-    terms_tf_idf = {}
+    weights = {}
     for t in tfs:
-      tf = math.log(tfs[t], 2) + 1
-      terms_tf_idf[t] = tf * self.idf(t)
-    return terms_tf_idf
+      tf  = 1 + math.log(tfs[t], 2)
+      idf = self.idf(t)
+      weights[t] = tf * idf
+    return weights
 
 
   def tf_idf(self, t, d):
-    """return tf_idf for a document pair on term t"""
-    return self.tf(t, d) * self.idf(t)
+    """return tf_idf for a document d and term t"""
+    tf_idf = self.tf(t, d) * self.idf(t)
+    return tf_idf
 
 
   def idf(self, t):
     """retrun idf of term t in the index"""
-    df = float(self.index.size)/len(self.index.terms[t])
-    return math.log(df, 2)
+    return math.log(float(self.index.size)/len(self.index.terms[t]), 2)
 
 
   def tf(self, t, d):
     """return tf for term t in document d"""
-    return 1 + math.log(self.index.terms[t][d], 2)
+    return 1 + math.log(self.index.terms[t][d]['tf'], 2)
 
