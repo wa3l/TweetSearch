@@ -10,6 +10,7 @@ Date: 3/1/2013
 import prompt, gen, engn, timer
 
 class PRUserSearch(prompt.Prompt):
+  """PageRanked Users interface"""
 
   def preloop(self):
     """Print intro message and write or load indices"""

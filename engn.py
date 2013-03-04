@@ -28,7 +28,6 @@ class Engine:
     self.query = query
     if not self.all_terms_present(): return
     self.calculate_scores()
-    # print self.scores
     return self.top_50_answers()
 
 
@@ -82,6 +81,7 @@ class Engine:
 
 
   def matching_docs(self):
+    """Return all documents that contain any of the query terms"""
     docs = []
     for t in self.query:
       docs.extend(self.index.terms[t].keys())
@@ -89,6 +89,7 @@ class Engine:
 
 
   def all_terms_of(self, docs):
+    """Return all terms that occur in docs"""
     terms = []
     for d in docs: terms.extend(self.index.docs[d]['terms'])
     return set(terms)

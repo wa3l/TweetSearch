@@ -16,7 +16,6 @@ class Prompt(cmd.Cmd):
   engine = None
   Index  = None
   index_name = "mars_tweets_medium.json"
-  # index_name = "sample2.json"
   prompt = "\nquery> "
   welcome = "\n### Welcome to Wael's search engine!\n### Enter your query to perform a search.\n### Enter '?' for help and 'exit' to terminate."
 
@@ -32,18 +31,12 @@ class Prompt(cmd.Cmd):
     return re.split(r'[^\w]', line.lower().strip(), flags=re.UNICODE)
 
 
-  def load_index(self):
-    """Load the index into memory"""
-    with timer.Timer() as t:
-      self.Index = gen.Index(self.index_name)
-    print '> Request took %.03f sec.' % t.interval
-
-
   def load_engine(self):
-    """Instantiate the engine in memory"""
-    self.load_index()
-    if not self.engine:
-      self.engine = engn.Engine(self.Index)
+    """Instantiate the engine & index in memory"""
+    with timer.Timer() as t:
+      if not self.engine:
+        self.engine = engn.Engine(gen.Index(self.index_name))
+    print '> Request took %.03f sec.' % t.interval
 
 
   def print_results(self, answers, line):

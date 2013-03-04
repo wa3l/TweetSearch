@@ -8,7 +8,9 @@ Date: 3/1/2013
 
 # Structure of index on disk:
 {
-  'size' : number of tweets,
+  'users' : {id: name},
+  'docs' : {user: id, terms: set(terms)},
+  'pageranks': {user-id: pagerank}
   'terms': {
     'term' : {
       'docsID': {'tf': 1, 'user': 32},
@@ -110,7 +112,6 @@ class Index:
 
   def save(self):
     """Save index to disk"""
-    # return
     index_file = open(self.index_name, "w")
     index = {
       'terms':      self.terms,

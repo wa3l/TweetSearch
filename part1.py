@@ -9,7 +9,7 @@ Date: 3/1/2013
 
 import prompt, gen, engn, timer
 
-class VRSearch(prompt.Prompt):
+class VSRSearch(prompt.Prompt):
   """Vector Retrieval search query interface"""
 
   def default(self, line):
@@ -18,10 +18,11 @@ class VRSearch(prompt.Prompt):
       answers = self.engine.search(self.parse_query(line))
     self.print_results(answers, line)
     print'\n> Search took %.06f sec.' % t.interval
+    index = self.engine.index
 
 
 def main():
-  VRSearch().cmdloop()
+  VSRSearch().cmdloop()
 
 if __name__ == '__main__':
   main()
