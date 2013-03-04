@@ -1,8 +1,8 @@
 #!/usr/bin/python
 
 """
-Homework 1: Search Engine.
-Module: main
+Homework 2: Search Engine.
+Module: prompt
 Author: Wael Al-Sallami
 Date: 2/10/2013
 """
@@ -15,6 +15,8 @@ class Prompt(cmd.Cmd):
 
   engine = None
   Index  = None
+  # index_name = "mars_tweets_medium.json"
+  index_name = "sample2.json"
   prompt = "\nquery> "
   welcome = "\n### Welcome to Wael's search engine!\n### Enter your query to perform a search.\n### Enter '?' for help and 'exit' to terminate."
 
@@ -23,27 +25,8 @@ class Prompt(cmd.Cmd):
     """Print intro message and write or load indices"""
     print self.welcome
     with timer.Timer() as t:
-      self.Index = gen.Index("mars_tweets_medium.json")
-      # self.Index = gen.Index("sample2.json")
+      self.Index = gen.Index(self.index_name)
     print '> Request took %.03f sec.' % t.interval
-
-
-  def default(self, line):
-    """Handle search query"""
-    query = self.parse_query(line)
-    if not self.engine: self.engine = engn.Engine(self.Index)
-
-    with timer.Timer() as t:
-      answers = self.engine.search(query)
-
-    if answers:
-      print "\n> Found %d search results:" % len(answers),
-      for doc in answers: print doc,
-      print ''
-    else:
-      print "\n> Sorry, your search for: (%s) did not yield any results :(" % line
-
-    print'\n> Search took %.06f sec.' % t.interval
 
 
   def parse_query(self, line):

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 """
-Homework 1: Search Engine.
+Homework : Search Engine.
 Module: gen
 Author: Wael Al-Sallami
 Date: 2/10/2013
@@ -19,7 +19,7 @@ Date: 2/10/2013
   }
 }
 """
-import os, re, gzip, timer, marshal, json, copy
+import os, re, gzip, timer, marshal, json, copy, pr
 from collections import Counter, namedtuple
 
 class Index:
@@ -38,15 +38,12 @@ class Index:
     if self.on_disk():
       print "\n> Reading index! This happens once per session, please wait ..."
       self.load()
-      print '\a\a'
+      print '\a'
     else:
       print "\n> Writing index! This only happens once, please wait ..."
       self.build(json_file)
       self.save()
-      print '\a\a'
-
-    # for p in self.pageranks:
-      # print str(self.users[p].name) + ": " + str(self.pageranks[p])
+      print '\a'
 
 
   def build(self, json_file):
@@ -56,74 +53,37 @@ class Index:
     for d in tweets:
       self.add_terms(d)
       self.add_doc(d)
-      self.add_user(d.user)
+      self.add_user(d['user'])
       self.add_mentions(d)
-    # self.pagerank()
-
-
-  def pagerank(self, alpha=.85):
-    tele = (1.0 - alpha) / len(self.users)
-    # initialize pageranks
-    prev_pr = dict.fromkeys(self.users, 1.0/len(self.users))
-    next_pr = dict.fromkeys(self.users, 0)
-    old = 0
-    new = 0
-    for u in prev_pr: old += prev_pr[u]
-    for i in range(100):
-      # conv = 0
-      for u in self.users:
-        for m in self.users[u].mentions:
-          next_pr[m] += prev_pr[u]/len(self.users[u].mentions)
-
-      # add teleportation:
-      if i == 0:
-        next_pr.update((k,v) for (k,v) in next_pr.iteritems() if v > 0)
-
-      for u in next_pr:
-        next_pr[u] = alpha * next_pr[u] + tele
-        new += next_pr[u]
-        # conv += abs(prev_pr[u] - next_pr[u])
-
-      conv = abs(new - old)/len(next_pr)
-      old = new
-      new = 0
-      print "i is %s and conv is %s" %(i, conv)
-      if conv < 0.00001: break
-      prev_pr = copy.deepcopy(next_pr)
-
-    self.pageranks = next_pr
-
-
-  def add_mentions(self, d):
-    """Add all mentions to a user's adjacency list"""
-    if not d.mentions: return
-    User = namedtuple('User', ['id', 'name'])
-    for m in d.mentions:
-      if m['id'] == d.user.id: continue
-      mentioned = User(m['id'], m['screen_name'])
-      self.add_user(mentioned)
-      self.users[d.user.id].mentions.add(mentioned.id)
-
-
-  def add_user(self, user):
-    """Add username to self.users[user-id]"""
-    if user.id not in self.users:
-      User = namedtuple('User', ['name', 'mentions'])
-      self.users[user.id] = User(user.name, set())
+    self.pageranks = pr.PageRank(self.users).build()
 
 
   def add_terms(self, d):
     """Add all tweet tokens to our terms index"""
-    counts = Counter(d.text)
-    for t in counts:
+    for t in d['terms']:
       if t not in self.terms: self.terms[t] = {}
-      self.terms[t][d.id] = counts[t]
+      self.terms[t][d['id']] = d['terms'][t]
 
 
   def add_doc(self, d):
     """Cache document to user relationships"""
-    Document = namedtuple('Document', ['user', 'terms'])
-    self.docs[d.id] = Document(d.user.id, set(d.text))
+    self.docs[d['id']] = {'user': d['user']['id'], 'terms': d['terms'].keys()}
+
+
+  def add_user(self, user):
+    """Add username to self.users[user-id]"""
+    if user['id'] not in self.users:
+      self.users[user['id']] = {'name': user['name'], 'mentions': set()}
+
+
+  def add_mentions(self, d):
+    """Add all mentions to a user's adjacency list"""
+    if not d['mentions']: return
+    user_id = d['user']['id']
+    for m in d['mentions']:
+      if m['id'] == user_id: continue
+      self.add_user({'id': m['id'], 'name': m['screen_name']})
+      self.users[user_id]['mentions'].add(m['id'])
 
 
   def tokenize(self, text):
@@ -134,22 +94,15 @@ class Index:
   def read_docs(self, filename):
     """Read tweets into {'docID': text} dictionary"""
     f = open(filename, 'rU')
-    # Document = namedtuple('Document', ['id', 'text', 'user', 'mentions'])
-    # User     = namedtuple('User', ['id', 'name'])
     tweets = []
     for line in f:
       d = json.loads(line)
       tweet = {
-        'id': d['id'],
-        'terms': self.tokenize(d['text']),
-        'user': {'id': d['user']['id'], 'name': d['user']['screen_name']},
+              'id': d['id'],
+           'terms': Counter(self.tokenize(d['text'])),
+            'user': {'id': d['user']['id'], 'name': d['user']['screen_name']},
         'mentions': d['entities']['user_mentions']
       }
-      #   d['id'],
-      #   self.tokenize(d['text']),
-      #   User(d['user']['id'], d['user']['screen_name']),
-      #   d['entities']['user_mentions']
-      # )
       tweets.append(tweet)
     f.close()
     return tweets
@@ -157,7 +110,7 @@ class Index:
 
   def save(self):
     """Save index to disk"""
-    # return
+    return
     index_file = open(self.index_name, "w")
     index = {
       'terms':      self.terms,

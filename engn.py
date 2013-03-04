@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 """
-Homework 1: Search Engine.
+Homework 2: Search Engine.
 Module: engn
 Author: Wael Al-Sallami
 Date: 2/10/2013
@@ -17,6 +17,7 @@ class Engine:
   scores = {}
   idf_weights = {}
 
+
   def __init__(self, index):
     """Save a pointer to our index"""
     self.index = index
@@ -27,32 +28,30 @@ class Engine:
     self.query = query
     if not self.all_terms_present(): return
     self.calculate_scores()
-    print self.scores
+    # print self.scores
     return self.top_50_answers()
+
+
+  def pagerank_search(self, query):
+    self.query = query
+    if not self.all_terms_present(): return
+    docs  = self.matching_docs()
+    ranks = self.index.pageranks
+    docs  = sorted(docs, key=lambda d: ranks[self.index.docs[d]['user']], reverse=True)
+    return docs[0:50]
+
 
 
   def calculate_scores(self):
     """Calculate the document scores for the given query terms"""
-    with timer.Timer() as t:
-      self.calculate_idfs()
-    print '> Request took %.03f sec.' % t.interval
-
-
-    docs = set()
-    for t in self.query:
-      docs = docs.union(set(self.index.terms[t].keys()))
-
-    terms = set()
-    for d in docs:
-      terms = terms.union(self.index.docs[d].terms)
-
+    self.calculate_idfs()
+    docs     = self.matching_docs()
+    terms    = self.all_terms_of(docs)
     query_tf = Counter(self.query)
     qvector  = self.query_vector(query_tf, terms)
-
     self.scores = {}
     for d in docs:
       self.scores[d] = self.cosim(qvector, self.doc_vector(d, terms))
-    return self.scores
 
 
   def cosim(self, q, d):
@@ -64,14 +63,15 @@ class Engine:
 
 
   def doc_vector(self, doc, terms):
+    """Build a document vector against terms set"""
     vector = []
     for t in terms:
       vector.append(self.weight(t, doc))
     return vector
 
 
-  """optimize idfs"""
   def query_vector(self, counter, terms):
+    """Build a query vector based on query terms counter & terms set"""
     vector = []
     for t in terms:
       w = 0
@@ -81,7 +81,21 @@ class Engine:
     return vector
 
 
+  def matching_docs(self):
+    docs = []
+    for t in self.query:
+      docs.extend(self.index.terms[t].keys())
+    return set(docs)
+
+
+  def all_terms_of(self, docs):
+    terms = []
+    for d in docs: terms.extend(self.index.docs[d]['terms'])
+    return set(terms)
+
+
   def all_terms_present(self):
+    """Check if all query terms are in the index"""
     for t in self.query:
       if t not in self.index.terms: return False
     return True
@@ -91,6 +105,13 @@ class Engine:
     """Sorts answer docs by their scores and returns the top 50"""
     answers = sorted(self.scores, key=lambda d: self.scores[d], reverse=True)
     return answers[0:50]
+
+
+  def top_50_users(self):
+    """Return the top 50 ranked users"""
+    ranks = self.index.pageranks
+    users = sorted(ranks, key=lambda d: ranks[d], reverse=True)
+    return [self.index.users[u]['name'] for u in users[0:50]]
 
 
   def calculate_idfs(self):
@@ -115,7 +136,4 @@ class Engine:
 
   def tf(self, t, d):
     """return tf for term t in document d"""
-    # return 1 + math.log(self.index.terms[t][d]['tf'], 2)
     return 1 + math.log(self.index.terms[t][d], 2)
-
-
