@@ -4,21 +4,17 @@
 Homework 2: Search Engine.
 Module: part2
 Author: Wael Al-Sallami
-Date: 2/10/2013
+Date: 3/1/2013
 """
 
 import prompt, gen, engn, timer
 
-class Ranker(prompt.Prompt):
+class PRUserSearch(prompt.Prompt):
 
   def preloop(self):
     """Print intro message and write or load indices"""
     print self.welcome
-    with timer.Timer() as t:
-      self.Index = gen.Index(self.index_name)
-      if not self.engine:
-        self.engine = engn.Engine(self.Index)
-    print '> Request took %.03f sec.' % t.interval
+    self.load_engine()
 
     with timer.Timer() as t:
       users = self.engine.top_50_users()
@@ -40,7 +36,7 @@ class Ranker(prompt.Prompt):
 
 
 def main():
-  Ranker().cmdloop()
+  PRUserSearch().cmdloop()
 
 if __name__ == '__main__':
   main()

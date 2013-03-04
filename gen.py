@@ -4,7 +4,7 @@
 Homework : Search Engine.
 Module: gen
 Author: Wael Al-Sallami
-Date: 2/10/2013
+Date: 3/1/2013
 
 # Structure of index on disk:
 {
@@ -110,7 +110,7 @@ class Index:
 
   def save(self):
     """Save index to disk"""
-    return
+    # return
     index_file = open(self.index_name, "w")
     index = {
       'terms':      self.terms,
