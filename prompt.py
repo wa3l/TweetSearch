@@ -1,23 +1,21 @@
 #!/usr/bin/python
 
 """
-Homework 2: Search Engine.
+TweetSearch.
 Module: prompt
 Author: Wael Al-Sallami
-Date: 3/1/2013
 """
 
-import sys, re, cmd
-import gen, engn, timer
+import sys, re, cmd, gen, engn, timer
 
 class Prompt(cmd.Cmd):
   """Search query interface"""
 
-  engine = None
-  Index  = None
+  engine     = None
+  Index      = None
   index_name = "mars_tweets_medium.json"
-  prompt = "\nquery> "
-  welcome = "\n### Welcome to Wael's search engine!\n### Enter your query to perform a search.\n### Enter '?' for help and 'exit' to terminate."
+  prompt     = "\nquery> "
+  welcome    = "\n### Welcome to Wael's search engine!\n### Enter your query to perform a search.\n### Enter '?' for help and 'exit' to terminate."
 
 
   def preloop(self):
@@ -44,10 +42,9 @@ class Prompt(cmd.Cmd):
     if not answers:
       print "\n> Sorry, your search for: (%s) did not yield any results :(" % line
       return
-    num = len(answers)
-    print "\n> Found %d search results:\n" % num,
-    for i in range(1, num+1):
-      print "%s: %s" % (i, answers[i-1])
+    print "\n> Found %d search results:\n" % len(answers),
+    for i in range(len(answers)):
+      print "%s: %s" % (i+1, answers[i])
 
 
   def emptyline(self):

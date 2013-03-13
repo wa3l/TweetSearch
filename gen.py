@@ -4,7 +4,7 @@
 Homework : Search Engine.
 Module: gen
 Author: Wael Al-Sallami
-Date: 3/1/2013
+
 
 # Structure of index on disk:
 {

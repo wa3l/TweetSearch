@@ -1,15 +1,15 @@
 #!/usr/bin/python
 
 """
-Homework 2: Search Engine.
+TweetSearch.
 Module: timer
 Author: Wael Al-Sallami
-Date: 3/1/2013
 """
 
 import time
 
 class Timer:
+  """Timer class used to profile different actions"""
   def __enter__(self):
     self.start = time.clock()
     return self

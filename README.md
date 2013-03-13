@@ -25,7 +25,7 @@ User input is cleaned up from special characters, lower-cased, and tokenized.
 
 On the optimization side, a lot of thought went into identifying the bottlenecks in the program workflow and trying to rectify some of them. I timed various parts of the code and made sure to shave off a few seconds whenever I can.
 
-Furthermore, no effort was spared in cleaning up the code, making it as precise as possible without sacrificing readability. All methods are documented and different parts were separated into different modules/classes.
+Also, no effort was spared in cleaning up the code and making it as precise as possible without sacrificing readability. All methods are documented and different parts were separated into different modules/classes.
 
 ### Part 1 - Vector Space Retrieval:
 In this part, I tried to make whatever optimization possible to reduce the computation overhead. However, queries such as "mars" will still take forever because virtually every document in our corpus contains that term. Hence, the Cosine similarity computation will drain the processing resources of a single computer. In any case, things like idf weights for all terms are computed once and cached to reduce the overhead.
@@ -35,13 +35,13 @@ We may optimize the performance of this part by introducing tiered indices to th
 The search is done by fetching all documents that contain the terms in the query. All the terms that those documents contain are put together to form the vocabulary that we base our vectors on. Query and document vectors are created, and finally, a similarity score is computed for each (query, document) pair and the top 50 results are returned. 
 
 ### Part 2 - PageRank:
-This part will simply output the top 50 users in our corpus and exit. All ranks are initiated to equal probability and a value of 10^-7 is used to measure convergence. All dangling nodes are removed and PageRanks are only calculated for users with in/out mentions. Running this part will show that the users `MarsCuriosity` and `NASA` are the top two users, which makes perfect sense given the corpus domain.
+This part will simply output the top 50 users in our corpus and exit. All ranks are initiated to equal probability and a value of 10^-7 is used to measure convergence. All dangling nodes are removed and PageRanks are only calculated for users with in/out mentions. Running this part will show that, for instance, the users `MarsCuriosity` and `NASA` are the top two users, which makes perfect sense given the corpus domain.
 
 Since the discussion on our Google group seemed to be getting at the fact that using matrices to compute PageRanks is a performance bottleneck, I chose to use adjacency lists instead. With some profiling and optimization, ranking became a trivial task given the size of the corpus.
 
 ### Part 3 - PageRanked Documents:
 Querying this last portion of the program will cause all documents that contain the query terms to be fetched. Those documents are then ranked by their twitter users' PageRank values and the top 50 results are returned. 
 
-To test the difference between this method and the Vector Space Retrieval one, I checked the results of queries such as `advancement` or `circumference`. The returned documents were the same but ordered differently based on the algorithm described above.
+To test the difference between this method and the Vector Space Retrieval one, I checked the results of queries with few results such as `advancement` or `circumference`. The returned documents were the same but ordered differently based on the algorithm described above.
 
 Another approach to performing this could be adding/multiplying each result's cosine similarity with the query and its user's PageRank. However, doing this would further complicate the performance issues Vector Space Retrieval runs into. Again, tiered indices could eliminate this bottleneck.

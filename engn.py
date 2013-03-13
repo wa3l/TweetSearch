@@ -1,10 +1,9 @@
 #!/usr/bin/python
 
 """
-Homework 2: Search Engine.
+TweetSearch.
 Module: engn
 Author: Wael Al-Sallami
-Date: 3/1/2013
 """
 
 import math, timer

@@ -1,10 +1,9 @@
 #!/usr/bin/python
 
 """
-Homework 2: Search Engine.
+TweetSearch.
 Module: part1
 Author: Wael Al-Sallami
-Date: 3/1/2013
 """
 
 import prompt, gen, engn, timer

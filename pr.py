@@ -1,9 +1,8 @@
 #!/usr/bin/python
 """
-Homework 2: Search Engine.
+TweetSearch.
 Module: pr
 Author: Wael Al-Sallami
-Date: 3/1/2013
 """
 
 class PageRank:
