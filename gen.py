@@ -5,7 +5,6 @@ Homework : Search Engine.
 Module: gen
 Author: Wael Al-Sallami
 
-
 # Structure of index on disk:
 {
   'users' : {id: name},
@@ -21,8 +20,8 @@ Author: Wael Al-Sallami
   }
 }
 """
-import os, re, gzip, timer, marshal, json, copy, pr
-from collections import Counter, namedtuple
+import os, re, timer, marshal, json, pr
+from collections import Counter
 
 class Index:
   """The data store"""
@@ -40,12 +39,12 @@ class Index:
     if self.on_disk():
       print "\n> Reading index! This happens once per session, please wait ..."
       self.load()
-      print '\a'
+      print '\a' # ring
     else:
       print "\n> Writing index! This only happens once, please wait ..."
       self.build(json_file)
       self.save()
-      print '\a'
+      print '\a' # ring
 
 
   def build(self, json_file):
@@ -68,14 +67,20 @@ class Index:
 
 
   def add_doc(self, d):
-    """Cache document to user relationships"""
-    self.docs[d['id']] = {'user': d['user']['id'], 'terms': d['terms'].keys()}
+    """Cache document-to-user relationships"""
+    self.docs[d['id']] = {
+      'user':  d['user']['id'],
+      'terms': d['terms'].keys()
+    }
 
 
   def add_user(self, user):
     """Add username to self.users[user-id]"""
     if user['id'] not in self.users:
-      self.users[user['id']] = {'name': user['name'], 'mentions': set()}
+      self.users[user['id']] = {
+        'name': user['name'],
+        'mentions': set()
+      }
 
 
   def add_mentions(self, d):
@@ -84,7 +89,10 @@ class Index:
     user_id = d['user']['id']
     for m in d['mentions']:
       if m['id'] == user_id: continue
-      self.add_user({'id': m['id'], 'name': m['screen_name']})
+      self.add_user({
+        'id': m['id'],
+        'name': m['screen_name']
+      })
       self.users[user_id]['mentions'].add(m['id'])
 
 
@@ -102,7 +110,10 @@ class Index:
       tweet = {
               'id': d['id'],
            'terms': Counter(self.tokenize(d['text'])),
-            'user': {'id': d['user']['id'], 'name': d['user']['screen_name']},
+            'user': {
+              'id':   d['user']['id'],
+              'name': d['user']['screen_name']
+            },
         'mentions': d['entities']['user_mentions']
       }
       tweets.append(tweet)
@@ -130,8 +141,8 @@ class Index:
     index = marshal.load(index_file)
     self.terms      = index['terms']
     self.pageranks  = index['pageranks']
-    self.docs       = index['docs']
     self.users      = index['users']
+    self.docs       = index['docs']
     self.size       = len(index['docs'])
     del index
     index_file.close()
