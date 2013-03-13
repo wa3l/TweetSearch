@@ -1,5 +1,4 @@
 ## TweetSearch - A simple Vector Space and PageRank based Search Engine
-### Author: Wael Al-Sallami
 
 ### Usage
 1. To run the program and get an interactive interface, type `./vector_space.py`, `./pagerank.py` or `./tweets_pr.py` depending on which part you want to run.
