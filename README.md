@@ -4,7 +4,7 @@
 ### Usage
 1. To run the program and get an interactive interface, type `./vector_space.py`, `./pagerank.py` or `./tweets_pr.py` depending on which part you want to run.
 
-2. Place the json file in the code directory.
+2. Place the json file in the code directory. To download the corpus click [here](http://infolab.tamu.edu/static/670/mars_tweets_medium.json).
 
 3. To get help, type `help` or `?`
 
@@ -34,3 +34,11 @@ This part will simply output the top 50 users in the corpus and exit. All ranks 
 Querying this part of the engine will cause all documents that contain the query terms to be fetched. Those documents are then ranked by their twitter users' PageRank values and the top 50 results are returned. 
 
 Another approach to performing this could be adding/multiplying each result's cosine similarity with the query and its user's PageRank. However, doing this would further complicate the performance issues Vector Space Retrieval runs into.
+
+Author
+------
+Wael Al-Sallami | [wa3l.com](http://wa3l.com).
+  
+License
+-----
+Public domain: [http://unlicense.org](http://unlicense.org)
