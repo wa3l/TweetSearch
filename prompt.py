@@ -6,7 +6,7 @@ Module: prompt
 Author: Wael Al-Sallami
 """
 
-import sys, re, cmd, gen, engn, timer
+import re, cmd, gen, engn, timer
 
 class Prompt(cmd.Cmd):
   """Search query interface"""

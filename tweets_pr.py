@@ -2,11 +2,11 @@
 
 """
 TweetSearch.
-Module: part3
+Module: tweets_pr
 Author: Wael Al-Sallami
 """
 
-import prompt, gen, engn, timer
+import prompt, timer
 
 class PRDocumentSearch(prompt.Prompt):
   """PageRanked Search query interface"""
@@ -14,11 +14,9 @@ class PRDocumentSearch(prompt.Prompt):
   def default(self, line):
     """Handle search query"""
     query = self.parse_query(line)
-
     with timer.Timer() as t:
       answers = self.engine.pagerank_search(query)
-
-    self.print_results(answers, line)
+      self.print_results(answers, line)
     print'\n> Search took %.06f sec.' % t.interval
 
 

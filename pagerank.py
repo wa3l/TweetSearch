@@ -2,11 +2,11 @@
 
 """
 TweetSearch.
-Module: part2
+Module: pagerank
 Author: Wael Al-Sallami
 """
 
-import prompt, gen, engn, timer
+import prompt, timer
 
 class PRUserSearch(prompt.Prompt):
   """PageRanked Users interface"""
@@ -18,21 +18,20 @@ class PRUserSearch(prompt.Prompt):
 
     with timer.Timer() as t:
       users = self.engine.top_50_users()
+      self.print_results(users)
 
-    self.print_results(users)
     print'\n> Ranking took %.06f sec.' % t.interval
     exit()
 
 
   def print_results(self, users):
-    """Print results to the user"""
+    """Overloaded: Print results to the user"""
     if not users:
       print "\n> Error! No PageRanks were retrieved. :("
       return
-    num = len(users)
-    print "\n> Top %d users are:\n" % num
-    for i in range(1, num+1):
-      print "%s: %s" % (i, users[i-1])
+    print "\n> Top %d users are:\n" % len(users)
+    for i in range(len(users)):
+      print "%s: %s" % (i+1, users[i])
 
 
 def main():

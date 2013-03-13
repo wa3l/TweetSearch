@@ -2,11 +2,11 @@
 
 """
 TweetSearch.
-Module: part1
+Module: vector_space
 Author: Wael Al-Sallami
 """
 
-import prompt, gen, engn, timer
+import prompt, timer
 
 class VSRSearch(prompt.Prompt):
   """Vector Retrieval search query interface"""
@@ -15,9 +15,8 @@ class VSRSearch(prompt.Prompt):
     """Handle search query"""
     with timer.Timer() as t:
       answers = self.engine.search(self.parse_query(line))
-    self.print_results(answers, line)
+      self.print_results(answers, line)
     print'\n> Search took %.06f sec.' % t.interval
-    index = self.engine.index
 
 
 def main():
