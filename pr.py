@@ -6,6 +6,7 @@ Author: Wael Al-Sallami
 """
 
 class PageRank:
+  """Calculate PageRanks for Twitter users in the corpus"""
   users = {}
 
   def __init__(self, users):
