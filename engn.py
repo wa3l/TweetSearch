@@ -39,7 +39,6 @@ class Engine:
     return docs[0:50]
 
 
-
   def calculate_scores(self):
     """Calculate the document scores for the given query terms"""
     self.calculate_idfs()
@@ -47,7 +46,6 @@ class Engine:
     terms    = self.all_terms_of(docs)
     query_tf = Counter(self.query)
     qvector  = self.query_vector(query_tf, terms)
-    self.scores = {}
     for d in docs:
       self.scores[d] = self.cosim(qvector, self.doc_vector(d, terms))
 
@@ -73,7 +71,7 @@ class Engine:
     vector = []
     for t in terms:
       w = 0
-      if counter[t] != 0:
+      if counter[t] > 0:
         w = (1 + math.log(counter[t], 2)) * self.idf_weights[t]
       vector.append(w)
     return vector
